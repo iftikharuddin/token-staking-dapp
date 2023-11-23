@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 import "./Context.sol";
 
 abstract contract Ownable is Context {
+
     address private _owner;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -17,7 +18,7 @@ abstract contract Ownable is Context {
         _;
     }
 
-    function owner() public view virtual returns(address) {
+    function owner() public view virtual returns (address) {
         return _owner;
     }
 
@@ -39,4 +40,5 @@ abstract contract Ownable is Context {
         _owner = newOwner;
         emit OwnershipTransferred(oldOwner, newOwner);
     }
+    
 }
