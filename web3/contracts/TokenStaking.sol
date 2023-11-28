@@ -313,6 +313,50 @@ contract TokenStaking is Ownable, ReentrancyGuard, Initializable {
         emit UnStake(user, _amount);
     }
 
+    function claimReward() external nonReentrant whenTreasuryHasBalance(_users[msg.sender].rewardAmount) {
+        _calculateRewards(msg.sender);
+        uint256 rewardAmount = _users[msg.sender].rewardAmount;
 
+        require(rewardAmount > 0, "no reward to claim");
 
+        require(IERC20(_tokenAddress).transfer(msg.sender, rewardAmount), "Tokenstaking: failed to transfer");
+
+        _users[msg.sender].rewardAmount = 0;
+        _users[msg.sender].rewardClaimedSoFar += rewardAmount;
+
+        emit ClaimReward(msg.sender, rewardAmount);
+    }
+    /* User methods endss */
+
+    /* Internal functions */
+
+    function _calculateRewards(address _user) private {
+        (uint256 userReward, uint256 currentTime) = _getUserEstimatedRewards(_user);
+        _users[_user].rewardAmount += userReward;
+        _users[_user].lastRewardCalculationsTime = currentTime;
+    }
+
+    function _getUserEstimatedRewards(address _user) private view returns (uint256, uint256) {
+        uint256 userReward;
+
+        uint256 userTimestamp = _users[_user].lastRewardCalculationTime;
+
+        uint256 currentTime = getCurrentTime();
+
+        if(currentTime > _users[user].lastStakeTime + _stakeDays) {
+            currentTime = _users[user].lastStakeTime + _stakeDays;
+        }
+
+        uint256 totalStakedTime = currentTime - userTimestamp;
+
+        // calculate the reward based on how much time user has staked the tokens
+        userReward += ((totalStakedTime * _users[user].stakeAmount * _apyRate) / 365 days) / PERCENTAGE_DENOMINATOR;
+
+        return (userReward, currentTime);
+    }
+
+    function getCurrentTime() internal view virtual returns (uint256) {
+        return block.timestamp;
+    }
+    /* Internal functions Ends */
 }
