@@ -227,6 +227,60 @@ contract TokenStaking is Ownable, ReentrancyGuard, Initializable {
         _stakeEndDate = newDate;
     }
 
+    function updateEarlyUnstakeFeePercentage(uint256 newPercentage) external onlyOwner {
+        _earlyUnstakeFeePercentage = newPercentage;
+    }
 
+    function stakeForUser(uint256 amount, address user) onlyOwner nonReentrant {
+        _stakeTokens(amount, user);
+    }
+
+    function toggleStakingStatus() external onlyOwner {
+        _isStakingPaused = !_isStakingPaused;
+    }
+
+    function withdraw(uint256 amount) external onlyOwner  nonReentrant {
+        require(this.getWithdrawableAmount() >= amount, "Tokenstaking: not enough withdrawable tokens");
+        IERC20(_tokenAddress).transfer(msg.sender, amount);
+    }
+
+    /* Owner Methods ends */
+
+    /* User methods starts */
+
+    function stake(uint256 _amount) external nonReentrant {
+        _stakeTokens(_amount, msg.sender);
+    }
+
+    function _stakeTokens(uint256 _amount, address user_) private  {
+        require(!_isStakingPaused, "Tokenstaking: staking is paused");
+        uint256 currentTime = getCurrentTime();
+        require(currentTime > _stakeStartDate, "Tokenstaking: staking not started yet");
+        require(currentTime < _stakeEndDate, "Tokenstaking: staking ended");
+        require(_totalStakedTokens + _amount <= _maxStakeTokenLimit, "Tokenstaking: max staking token limit reached");
+        require(_amount > 0, "Tokenstaking: must be above zero");
+        require(
+            _amount >= _minimumStakingAmount,
+            "Tokenstaking: stake amount must be greater than minimum amount allowed"
+        );
+
+        if(_users[user_].stakeAmount != 0) {
+            _calculateRewards(user_);
+        } else {
+            _users[user_].lastRewardCalculationTime = currentTime;
+            _totaluser += 1;
+        }
+
+        _users[user_].stakeAmount += _amount;
+        _users[user_].lastStakeTime = currentTime;
+
+        _totalStakedTokens += _amount;
+
+        require(
+            IERC20(_tokenAddress).transferFrom(msg.sender, address(this), _amount), "TokenStaking: failed to transfer tokens"
+        );
+
+        emit Stake(user_, _amount);
+    }
 
 }
