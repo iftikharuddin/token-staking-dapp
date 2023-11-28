@@ -21,7 +21,7 @@ contract TokenStaking is Ownable, ReentrancyGuard, Initializable {
     uint256 _stakeEndDate;
     uint256 _stakeStartDate;
     uint256 _totalStakedTokens;
-    uint256 _totaluser;
+    uint256 _totalUsers;
     uint256 _stakeDays;
 
     uint256 _earlyUnstakeFeePercentage;
@@ -145,7 +145,7 @@ contract TokenStaking is Ownable, ReentrancyGuard, Initializable {
     * @notice this function is used to get the total users
     */
     function getTotalUsers() external view returns (uint256){
-        return _totaluser;
+        return _totalUsers;
     }
 
     /**
@@ -268,7 +268,7 @@ contract TokenStaking is Ownable, ReentrancyGuard, Initializable {
             _calculateRewards(user_);
         } else {
             _users[user_].lastRewardCalculationTime = currentTime;
-            _totaluser += 1;
+            _totalUsers += 1;
         }
 
         _users[user_].stakeAmount += _amount;
@@ -282,5 +282,37 @@ contract TokenStaking is Ownable, ReentrancyGuard, Initializable {
 
         emit Stake(user_, _amount);
     }
+
+    function unstake(uint256 _amount) external nonReentrant whenTreasuryHasBalance(_amount) {
+        address user = msg.sender;
+        require(_amount != 0, "Tokenstaking: amount should be non zero");
+        require(this.isStakingHolder(user), "not a stakeholder");
+        require(_users[user].stakeAmount >= _amount, "not enough stake to unstake");
+
+        // calculate user's reward until now
+        _calculateRewards(user);
+
+        uint256 feeEarlyUnstake;
+
+        if(getCurrentTime() <= _users[user].lastStakeTime + _stakeDays) {
+            feeEarlyUnstake = ((_amount * _earlyUnstakeFeePercentage) / PERCENTAGE_DENOMINATOR);
+            emit EarlyUnStakeFee(user, feeEarlyUnstake);
+        }
+
+        uint256 amountToUnstake = _amount - feeEarlyUnstake;
+        _users[user].stakeAmount -= _amount;
+
+        _totalStakedTokens -= _amount;
+
+        if(_users[user].stakeAmount == 0) {
+            // delete user
+            _totalUsers -= 1;
+        }
+
+        require(IERC20(_tokenAddress).transfer(user, amountToUnstake), "Failed to transfer");
+        emit UnStake(user, _amount);
+    }
+
+
 
 }
