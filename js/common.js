@@ -134,7 +134,6 @@ function formatEthErrorMsg(error) {
 }
 
 function getSelectedTab(sClass) {
-    console.log(sClass);
     return sClass || contractCall;
 }
 
