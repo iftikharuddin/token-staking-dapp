@@ -13,5 +13,6 @@ Build your web3 Dapp "Token Staking Dapp Project", in which you can provide user
 - Custom ERC20 Token contract For Stacking | Build And Deploy Token Staking Dapp
 - Token Stacking Smart Contract Solidity | Build And Deploy Full Stack Token Staking Dapp (DeFi)
 - Connecting Solidity Smart Contract | Build And Deploy Token Staking Dapp For Scratch Beginners
+- Staking Page And All components | Build And Deploy Token Staking Dapp | DeFi Project
 
 
